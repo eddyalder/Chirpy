@@ -2,11 +2,12 @@
 import React, { useState } from 'react';
 import { getRandomBird } from './services/xenoCanto';
 import { getBirdImage } from './services/imageService';
-import { removeImageBackground } from './services/backgroundRemoval';
+import { submitVote } from './services/api';
 import BirdCard from './components/BirdCard';
 import Button from './components/Button';
 import Loader from './components/Loader';
 import BattleTransition from './components/BattleTransition';
+import { Leaderboard } from './components/Leaderboard';
 import { Music, Sparkles, Key } from 'lucide-react';
 
 function App() {
@@ -51,7 +52,7 @@ function App() {
 
         // Fallback to common name if no image found
         if (!rawImage && bird.name) {
-          console.log(`No image for ${bird.sciName}, trying common name: ${bird.name}`);
+          console.log(`No image for ${bird.sciName}, trying common name: ${bird.name} `);
           rawImage = await getBirdImage(bird.name);
         }
 
@@ -106,11 +107,20 @@ function App() {
     }
   };
 
-  const handleVote = (winnerSide) => {
+  const handleVote = async (winnerSide) => {
     const winner = winnerSide === 'left' ? leftBird : rightBird;
+    const loser = winnerSide === 'left' ? rightBird : leftBird;
+
     setLastWinner(winner);
     setPlayingSide(null); // Stop audio on vote
     console.log(`Voted for ${winnerSide}`);
+
+    // Submit vote to backend
+    if (winner && loser) {
+      // Use scientific name as slug for uniqueness
+      await submitVote(winner.sciName, loser.sciName);
+    }
+
     startBattle(); // Load next round
   };
 
@@ -242,6 +252,8 @@ function App() {
               />
             </div>
           </div>
+
+          <Leaderboard />
         </div>
       )}
     </div>
