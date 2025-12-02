@@ -3,25 +3,25 @@ import React from 'react';
 import Loader from './Loader';
 
 const BattleTransition = ({ winner }) => {
-    return (
-        <div className="transition-container">
-            <div className="winner-showcase">
-                <div className="winner-icon">🎉</div>
-                <h2>Good Choice!</h2>
-                {winner && (
-                    <div className="winner-card">
-                        <p className="winner-name">{winner.name}</p>
-                        <p className="winner-sci">{winner.sciName}</p>
-                    </div>
-                )}
-            </div>
+  return (
+    <div className="transition-container">
+      <div className="winner-showcase">
+        <div className="winner-icon">🎉</div>
+        <h2>Good Choice!</h2>
+        {winner && (
+          <div className="winner-card">
+            <p className="winner-name">{winner.name}</p>
+            <p className="winner-sci">{winner.sciName}</p>
+          </div>
+        )}
+      </div>
 
-            <div className="next-battle-loader">
-                <Loader />
-                <p>Scouting for new challengers...</p>
-            </div>
+      <div className="next-battle-loader">
+        <Loader />
+        <p>Scouting for new challengers...</p>
+      </div>
 
-            <style>{`
+      <style>{`
         .transition-container {
           display: flex;
           flex-direction: column;
@@ -85,8 +85,8 @@ const BattleTransition = ({ winner }) => {
           to { opacity: 1; }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default BattleTransition;

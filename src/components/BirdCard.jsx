@@ -63,7 +63,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           <img src={image} alt={bird.name} className="bird-image" />
         ) : (
           <div className="placeholder-image">
-            <span style={{ fontSize: '4rem' }}>🐦</span>
+            <img src="/favicon.svg" alt="Default Bird" className="default-bird-icon" />
           </div>
         )}
       </div>
@@ -173,7 +173,11 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
         .bird-image {
           width: 100%;
           height: 100%;
-          object-fit: contain;
+          object-fit: cover; /* Ensure image fills the circle */
+          border-radius: 50%; /* Make it a circle */
+          border: 4px solid white; /* Add a nice border */
+          box-shadow: 0 8px 16px rgba(0,0,0,0.1); /* Add depth */
+          background-color: #f0fdf4; /* Fallback background */
         }
 
         .placeholder-image {

@@ -46,9 +46,19 @@ function App() {
       const bird = await getRandomBird(key);
       let image = null;
       try {
-        const rawImage = await getBirdImage(bird.sciName);
+        // Try scientific name first
+        let rawImage = await getBirdImage(bird.sciName);
+
+        // Fallback to common name if no image found
+        if (!rawImage && bird.name) {
+          console.log(`No image for ${bird.sciName}, trying common name: ${bird.name}`);
+          rawImage = await getBirdImage(bird.name);
+        }
+
         if (rawImage) {
-          image = await removeImageBackground(rawImage);
+          // Optimization: Background removal was too slow (30s+).
+          // We will use the raw image and style it with CSS (circle crop).
+          image = rawImage;
         }
       } catch (imgError) {
         console.error("Image error:", imgError);
@@ -169,7 +179,7 @@ function App() {
         <div className="welcome-screen">
           <div className="hero-content">
             <div className="logo-badge">
-              <span className="logo-icon">🐦</span>
+              <img src="/favicon.svg" alt="Chirpy Logo" className="logo-img" />
             </div>
             <h1 className="title">Chirpy</h1>
             <p className="subtitle">Listen. Vote. Discover.</p>
