@@ -22,7 +22,7 @@ function App() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [gameStarted, setGameStarted] = useState(false);
+  const [view, setView] = useState('home'); // 'home' | 'battle' | 'leaderboard'
   const [lastWinner, setLastWinner] = useState(null);
   const [playingSide, setPlayingSide] = useState(null); // 'left' | 'right' | null
 
@@ -36,7 +36,7 @@ function App() {
     setApiKey('');
     localStorage.removeItem('xeno_canto_key');
     setShowKeyInput(true);
-    setGameStarted(false);
+    setView('home');
     setLeftBird(null);
     setRightBird(null);
     setPlayingSide(null);
@@ -52,7 +52,7 @@ function App() {
 
         // Fallback to common name if no image found
         if (!rawImage && bird.name) {
-          console.log(`No image for ${bird.sciName}, trying common name: ${bird.name} `);
+          console.log(`No image for ${bird.sciName}, trying common name: ${bird.name}`);
           rawImage = await getBirdImage(bird.name);
         }
 
@@ -95,7 +95,7 @@ function App() {
       setLeftImage(leftResult.image);
       setRightBird(rightResult.bird);
       setRightImage(rightResult.image);
-      setGameStarted(true);
+      setView('battle');
       setLastWinner(null); // Reset winner after loading new pair
     } catch (err) {
       setError(err.message);
@@ -126,7 +126,7 @@ function App() {
 
   // Loading Screen
   if (loading) {
-    if (gameStarted && lastWinner) {
+    if (view === 'battle' && lastWinner) {
       return <BattleTransition winner={lastWinner} />;
     }
 
@@ -185,7 +185,7 @@ function App() {
         </div>
       )}
 
-      {!gameStarted ? (
+      {view === 'home' && (
         <div className="welcome-screen">
           <div className="hero-content">
             <div className="logo-badge">
@@ -203,6 +203,12 @@ function App() {
               </Button>
             </div>
 
+            <div className="action-container" style={{ marginTop: '1rem' }}>
+              <Button onClick={() => setView('leaderboard')} variant="secondary">
+                View Leaderboard
+              </Button>
+            </div>
+
             <div className="action-container">
               <button className="change-key-btn" onClick={() => setShowKeyInput(true)}>
                 {apiKey ? 'Change API Key' : 'Enter API Key'}
@@ -216,11 +222,18 @@ function App() {
             <span className="floating-bird b3">🦉</span>
           </div>
         </div>
-      ) : (
+      )}
+
+      {view === 'battle' && (
         <div className="battle-arena">
           <div className="header">
             <h1>Chirpy</h1>
-            <button className="exit-btn" onClick={() => setGameStarted(false)}>Exit</button>
+            <div className="header-actions">
+              <button className="icon-btn" onClick={() => setView('leaderboard')} title="Leaderboard">
+                🏆
+              </button>
+              <button className="exit-btn" onClick={() => setView('home')}>Exit</button>
+            </div>
           </div>
 
           <div className="battle-ground">
@@ -252,7 +265,15 @@ function App() {
               />
             </div>
           </div>
+        </div>
+      )}
 
+      {view === 'leaderboard' && (
+        <div className="leaderboard-page">
+          <div className="header">
+            <h1>Leaderboard</h1>
+            <button className="exit-btn" onClick={() => setView('home')}>Back</button>
+          </div>
           <Leaderboard />
         </div>
       )}

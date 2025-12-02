@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const { pool, init, ensureBird } = require("./db");
@@ -7,6 +8,12 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    next();
+});
 
 // Vote submission
 app.post("/api/vote", async (req, res) => {
@@ -55,4 +62,10 @@ app.get("/api/leaderboard", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+// Initialize DB on startup
+init().then(() => {
+    console.log("Database initialized");
+    app.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+}).catch(err => {
+    console.error("Failed to initialize database:", err);
+});

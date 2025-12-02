@@ -1,12 +1,14 @@
 const { Pool } = require("pg");
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes("onrender.com")
+    ? { rejectUnauthorized: false }
+    : process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
 async function init() {
-    await pool.query(`
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS birds (
       id SERIAL PRIMARY KEY,
       slug TEXT NOT NULL UNIQUE,
@@ -17,14 +19,14 @@ async function init() {
 }
 
 async function ensureBird(slug) {
-    const res = await pool.query("SELECT * FROM birds WHERE slug = $1", [slug]);
-    if (res.rows.length > 0) return res.rows[0];
+  const res = await pool.query("SELECT * FROM birds WHERE slug = $1", [slug]);
+  if (res.rows.length > 0) return res.rows[0];
 
-    const insert = await pool.query(
-        "INSERT INTO birds (slug) VALUES ($1) RETURNING *",
-        [slug]
-    );
-    return insert.rows[0];
+  const insert = await pool.query(
+    "INSERT INTO birds (slug) VALUES ($1) RETURNING *",
+    [slug]
+  );
+  return insert.rows[0];
 }
 
 module.exports = { pool, init, ensureBird };
