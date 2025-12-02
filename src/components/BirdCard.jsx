@@ -1,87 +1,130 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, RefreshCw, MapPin, Music } from 'lucide-react';
 import Button from './Button';
 
-const BirdCard = ({ bird, image, onRandomize, loading }) => {
-    const [isPlaying, setIsPlaying] = useState(false);
-    const audioRef = useRef(null);
+const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isActive, onPlay }) => {
+  const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(null);
 
-    useEffect(() => {
-        if (audioRef.current) {
-            audioRef.current.pause();
-            setIsPlaying(false);
-            audioRef.current.load(); // Reload audio when bird changes
-        }
-    }, [bird]);
+  // Reset state when bird changes
+  useEffect(() => {
+    setCurrentRecordingIndex(0);
+    setIsPlaying(false);
+  }, [bird]);
 
-    const togglePlay = () => {
-        if (audioRef.current) {
-            if (isPlaying) {
-                audioRef.current.pause();
-            } else {
-                audioRef.current.play();
-            }
-            setIsPlaying(!isPlaying);
-        }
-    };
+  // Handle audio source change
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+      audioRef.current.load();
+    }
+  }, [currentRecordingIndex, bird]);
 
-    const handleAudioEnded = () => {
+  // Handle external stop (when another bird starts playing)
+  useEffect(() => {
+    if (isBattleMode && !isActive && isPlaying && audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  }, [isActive, isBattleMode, isPlaying]);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
         setIsPlaying(false);
-    };
+      } else {
+        // If battle mode, notify parent we are playing
+        if (isBattleMode && onPlay) {
+          onPlay();
+        }
+        audioRef.current.play();
+        setIsPlaying(true);
+      }
+    }
+  };
 
-    if (!bird) return null;
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
 
-    return (
-        <div className="bird-card">
-            <div className="image-container">
-                {image ? (
-                    <img src={image} alt={bird.name} className="bird-image" />
-                ) : (
-                    <div className="placeholder-image">
-                        <span style={{ fontSize: '4rem' }}>🐦</span>
-                    </div>
-                )}
-            </div>
+  if (!bird) return null;
 
-            <div className="content">
-                <h2 className="bird-name">{bird.name}</h2>
-                <p className="scientific-name">{bird.sciName}</p>
+  const currentRecording = bird.recordings && bird.recordings[currentRecordingIndex]
+    ? bird.recordings[currentRecordingIndex]
+    : { audio: bird.audio, location: bird.location, country: bird.country }; // Fallback
 
-                <div className="info-row">
-                    <MapPin size={16} className="icon" />
-                    <span>{bird.location}, {bird.country}</span>
-                </div>
+  return (
+    <div className={`bird-card ${isBattleMode ? 'battle-card' : ''}`}>
+      <div className="image-container">
+        {image ? (
+          <img src={image} alt={bird.name} className="bird-image" />
+        ) : (
+          <div className="placeholder-image">
+            <span style={{ fontSize: '4rem' }}>🐦</span>
+          </div>
+        )}
+      </div>
 
-                <div className="controls">
-                    <button className="play-button" onClick={togglePlay}>
-                        {isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" />}
-                    </button>
-                    <div className="audio-visualizer">
-                        {/* Simple visualizer placeholder */}
-                        <div className={`bar ${isPlaying ? 'animate' : ''}`}></div>
-                        <div className={`bar ${isPlaying ? 'animate' : ''}`} style={{ animationDelay: '0.1s' }}></div>
-                        <div className={`bar ${isPlaying ? 'animate' : ''}`} style={{ animationDelay: '0.2s' }}></div>
-                        <div className={`bar ${isPlaying ? 'animate' : ''}`} style={{ animationDelay: '0.3s' }}></div>
-                    </div>
-                </div>
+      <div className="content">
+        <h2 className="bird-name">{bird.name}</h2>
+        <p className="scientific-name">{bird.sciName}</p>
 
-                <audio
-                    ref={audioRef}
-                    src={bird.audio}
-                    onEnded={handleAudioEnded}
-                    onError={(e) => console.error("Audio error:", e)}
-                />
+        <div className="info-row">
+          <MapPin size={16} className="icon" />
+          <span>{currentRecording.location}, {currentRecording.country}</span>
+        </div>
 
-                <div className="actions">
-                    <Button onClick={onRandomize} disabled={loading} variant="secondary">
-                        <RefreshCw size={20} className={loading ? 'spin' : ''} />
-                        {loading ? 'Finding Bird...' : 'Another Bird'}
-                    </Button>
-                </div>
-            </div>
+        <div className="controls">
+          <button className="play-button" onClick={togglePlay}>
+            {isPlaying ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" />}
+          </button>
+          <div className="audio-visualizer">
+            <div className={`bar ${isPlaying ? 'animate' : ''}`}></div>
+            <div className={`bar ${isPlaying ? 'animate' : ''}`} style={{ animationDelay: '0.1s' }}></div>
+            <div className={`bar ${isPlaying ? 'animate' : ''}`} style={{ animationDelay: '0.2s' }}></div>
+            <div className={`bar ${isPlaying ? 'animate' : ''}`} style={{ animationDelay: '0.3s' }}></div>
+          </div>
+        </div>
 
-            <style>{`
+        {/* Sound Selectors */}
+        {bird.recordings && bird.recordings.length > 1 && (
+          <div className="sound-selectors">
+            {bird.recordings.map((_, index) => (
+              <button
+                key={index}
+                className={`sound-dot ${index === currentRecordingIndex ? 'active' : ''}`}
+                onClick={() => setCurrentRecordingIndex(index)}
+                aria-label={`Select sound ${index + 1}`}
+              />
+            ))}
+          </div>
+        )}
+
+        <audio
+          ref={audioRef}
+          src={currentRecording.audio}
+          onEnded={handleAudioEnded}
+          onError={(e) => console.error("Audio error:", e)}
+        />
+
+        <div className="actions">
+          {isBattleMode ? (
+            <Button onClick={onVote} disabled={loading} variant="primary" className="vote-button">
+              {loading ? 'Loading...' : 'Vote for Me!'}
+            </Button>
+          ) : (
+            <Button onClick={onRandomize} disabled={loading} variant="secondary">
+              <RefreshCw size={20} className={loading ? 'spin' : ''} />
+              {loading ? 'Finding Bird...' : 'Another Bird'}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <style>{`
         .bird-card {
           background: rgba(255, 255, 255, 0.6);
           backdrop-filter: blur(20px);
@@ -90,6 +133,7 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
           padding: 2rem;
           width: 100%;
           max-width: 400px;
+          min-height: 580px;
           box-shadow: 0 20px 40px rgba(0,0,0,0.1);
           border: 1px solid rgba(255, 255, 255, 0.8);
           display: flex;
@@ -101,6 +145,10 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
           margin-top: 60px; /* Space for the bird popping out */
         }
 
+        .battle-card {
+            min-height: 500px; /* Slightly smaller for battle mode if needed */
+        }
+
         .image-container {
           width: 200px;
           height: 200px;
@@ -110,6 +158,7 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
           z-index: 10;
           filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
           transition: transform 0.3s ease;
+          flex-shrink: 0;
         }
         
         .bird-card:hover .image-container {
@@ -138,6 +187,7 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
           flex-direction: column;
           align-items: center;
           gap: 0.5rem;
+          flex: 1;
         }
 
         .bird-name {
@@ -145,6 +195,10 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
           font-weight: 800;
           color: var(--color-text);
           line-height: 1.2;
+          min-height: 2.4em;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .scientific-name {
@@ -156,11 +210,19 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
 
         .info-row {
           display: flex;
-          align-items: center;
-          gap: 6px;
+          align-items: flex-start;
+          gap: 8px;
           color: var(--color-text-light);
           font-size: 0.9rem;
           margin-bottom: 1.5rem;
+          text-align: left;
+          max-width: 100%;
+          min-height: 2.7em;
+        }
+
+        .icon {
+          margin-top: 4px;
+          flex-shrink: 0;
         }
 
         .controls {
@@ -170,7 +232,7 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
           background: rgba(255, 255, 255, 0.5);
           padding: 0.5rem 1rem;
           border-radius: 20px;
-          margin-bottom: 1.5rem;
+          margin-bottom: 1rem;
           width: 100%;
           justify-content: center;
         }
@@ -225,9 +287,44 @@ const BirdCard = ({ bird, image, onRandomize, loading }) => {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+
+        .sound-selectors {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .sound-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--color-secondary);
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sound-dot.active {
+            background: var(--color-primary);
+            transform: scale(1.2);
+        }
+
+        .actions {
+          margin-top: 2rem;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          padding-top: 1rem;
+        }
+        
+        .vote-button {
+            width: 100%;
+            font-size: 1.2rem;
+            padding: 1rem;
+        }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 };
 
 export default BirdCard;

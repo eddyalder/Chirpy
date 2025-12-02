@@ -6,16 +6,24 @@ import { removeImageBackground } from './services/backgroundRemoval';
 import BirdCard from './components/BirdCard';
 import Button from './components/Button';
 import Loader from './components/Loader';
+import BattleTransition from './components/BattleTransition';
 import { Music, Sparkles, Key } from 'lucide-react';
 
 function App() {
-  const [started, setStarted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [bird, setBird] = useState(null);
-  const [birdImage, setBirdImage] = useState(null);
-  const [error, setError] = useState(null);
   const [apiKey, setApiKey] = useState(localStorage.getItem('xeno_canto_key') || '');
   const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem('xeno_canto_key'));
+
+  // Battle State
+  const [leftBird, setLeftBird] = useState(null);
+  const [rightBird, setRightBird] = useState(null);
+  const [leftImage, setLeftImage] = useState(null);
+  const [rightImage, setRightImage] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [lastWinner, setLastWinner] = useState(null);
+  const [playingSide, setPlayingSide] = useState(null); // 'left' | 'right' | null
 
   const saveKey = (key) => {
     setApiKey(key);
@@ -27,11 +35,32 @@ function App() {
     setApiKey('');
     localStorage.removeItem('xeno_canto_key');
     setShowKeyInput(true);
-    setStarted(false);
-    setBird(null);
+    setGameStarted(false);
+    setLeftBird(null);
+    setRightBird(null);
+    setPlayingSide(null);
   };
 
-  const fetchBird = async () => {
+  const fetchBirdData = async (key) => {
+    try {
+      const bird = await getRandomBird(key);
+      let image = null;
+      try {
+        const rawImage = await getBirdImage(bird.sciName);
+        if (rawImage) {
+          image = await removeImageBackground(rawImage);
+        }
+      } catch (imgError) {
+        console.error("Image error:", imgError);
+      }
+      return { bird, image };
+    } catch (err) {
+      console.error("Bird fetch error:", err);
+      throw err;
+    }
+  };
+
+  const startBattle = async () => {
     if (!apiKey) {
       setShowKeyInput(true);
       return;
@@ -39,251 +68,172 @@ function App() {
 
     setLoading(true);
     setError(null);
-    setBirdImage(null); // Reset image while loading
+    setPlayingSide(null);
+    // Don't clear birds immediately if we want to show a transition, 
+    // but we do need to clear them eventually or just replace them.
+    // For now, we keep them until new ones arrive or we use the transition screen.
 
     try {
-      // 1. Get Random Bird
-      const birdData = await getRandomBird(apiKey);
-      setBird(birdData);
+      // Fetch two birds in parallel
+      const [leftResult, rightResult] = await Promise.all([
+        fetchBirdData(apiKey),
+        fetchBirdData(apiKey)
+      ]);
 
-      // 2. Get Image
-      const imageUrl = await getBirdImage(birdData.sciName);
-
-      if (imageUrl) {
-        // 3. Remove Background
-        // Note: This might take a moment
-        const cutOutUrl = await removeImageBackground(imageUrl);
-        setBirdImage(cutOutUrl);
-      } else {
-        setBirdImage(null); // Fallback will be shown in BirdCard
-      }
-
+      setLeftBird(leftResult.bird);
+      setLeftImage(leftResult.image);
+      setRightBird(rightResult.bird);
+      setRightImage(rightResult.image);
+      setGameStarted(true);
+      setLastWinner(null); // Reset winner after loading new pair
     } catch (err) {
-      console.error("Failed to fetch bird:", err);
-      if (err.message.includes('Missing or invalid') || err.message.includes('403')) {
-        setError("Invalid API Key. Please check your key.");
+      setError(err.message);
+      if (err.message === 'API Key is required' || err.message.includes('key')) {
         setShowKeyInput(true);
-      } else {
-        setError("Oops! The bird flew away. Try again!");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStart = async () => {
-    if (!apiKey) {
-      setShowKeyInput(true);
-      return;
-    }
-    setStarted(true);
-    await fetchBird();
+  const handleVote = (winnerSide) => {
+    const winner = winnerSide === 'left' ? leftBird : rightBird;
+    setLastWinner(winner);
+    setPlayingSide(null); // Stop audio on vote
+    console.log(`Voted for ${winnerSide}`);
+    startBattle(); // Load next round
   };
+
+  // Loading Screen
+  if (loading) {
+    if (gameStarted && lastWinner) {
+      return <BattleTransition winner={lastWinner} />;
+    }
+
+    return (
+      <div className="app-container">
+        <div className="loading-container">
+          <Loader />
+          <p className="loading-text">Setting up the battle...</p>
+        </div>
+        <style>{`
+          .app-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+          }
+          .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+          }
+          .loading-text {
+            color: var(--color-text-light);
+            font-size: 1.2rem;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+          }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
-      {!started ? (
-        <div className="welcome-screen">
-          <div className="logo-container">
-            <Music size={48} className="logo-icon" />
-            <Sparkles size={24} className="sparkle-icon" />
-          </div>
-          <h1 className="title">ReBird</h1>
-          <p className="subtitle">Discover the songs of nature.</p>
-
-          {showKeyInput ? (
-            <div className="key-input-container">
-              <p className="key-instruction">Please enter your Xeno-Canto API Key (v3)</p>
-              <div className="input-wrapper">
-                <Key size={20} className="input-icon" />
-                <input
-                  type="text"
-                  placeholder="Paste your API key here"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="api-input"
-                />
-              </div>
-              <Button onClick={() => saveKey(apiKey)} disabled={!apiKey} className="save-key-button">
-                Save & Start
-              </Button>
-              <p className="key-help">
-                Get a key at <a href="https://xeno-canto.org/account" target="_blank" rel="noreferrer">xeno-canto.org</a>
-              </p>
-            </div>
-          ) : (
-            <div className="start-actions">
-              <Button onClick={handleStart} className="start-button">
-                Get a Bird
-              </Button>
-              <button onClick={clearKey} className="change-key-link">Change API Key</button>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="main-screen">
-          {loading && !bird ? (
-            <div className="loading-container">
-              <Loader />
-              <p>Catching a bird...</p>
-            </div>
-          ) : error ? (
-            <div className="error-container">
-              <p>{error}</p>
-              <Button onClick={fetchBird}>Try Again</Button>
-              <button onClick={clearKey} className="change-key-link" style={{ marginTop: '1rem' }}>Change API Key</button>
-            </div>
-          ) : (
-            <BirdCard
-              bird={bird}
-              image={birdImage}
-              onRandomize={fetchBird}
-              loading={loading}
+      {showKeyInput && (
+        <div className="key-modal">
+          <div className="modal-content">
+            <h2>Enter Xeno-Canto API Key</h2>
+            <p>Get one at <a href="https://xeno-canto.org/developer/api" target="_blank" rel="noreferrer">xeno-canto.org</a></p>
+            <input
+              type="text"
+              placeholder="API Key"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveKey(e.target.value);
+              }}
             />
-          )}
+            <Button onClick={(e) => saveKey(e.target.previousSibling.value)}>Save</Button>
+          </div>
         </div>
       )}
 
-      <style>{`
-        .app-container {
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 80vh;
-        }
+      {!gameStarted ? (
+        <div className="welcome-screen">
+          <div className="hero-content">
+            <div className="logo-badge">
+              <span className="logo-icon">🐦</span>
+            </div>
+            <h1 className="title">Chirpy</h1>
+            <p className="subtitle">Listen. Vote. Discover.</p>
+            <p className="description">Two birds enter, one bird leaves (with your vote). Which one sounds cooler?</p>
 
-        .welcome-screen {
-          text-align: center;
-          animation: fadeIn 0.8s ease-out;
-          width: 100%;
-          max-width: 400px;
-        }
+            {error && <div className="error-message">{error}</div>}
 
-        .logo-container {
-          position: relative;
-          display: inline-block;
-          margin-bottom: 1rem;
-          color: var(--color-primary);
-        }
+            <div className="action-container">
+              <Button onClick={startBattle} size="large" className="start-btn-pulse">
+                Start Battle
+              </Button>
+            </div>
 
-        .sparkle-icon {
-          position: absolute;
-          top: -10px;
-          right: -10px;
-          color: var(--color-secondary);
-          animation: pulse 2s infinite;
-        }
+            <div className="action-container">
+              <button className="change-key-btn" onClick={() => setShowKeyInput(true)}>
+                {apiKey ? 'Change API Key' : 'Enter API Key'}
+              </button>
+            </div>
+          </div>
 
-        .title {
-          font-size: 4rem;
-          font-weight: 800;
-          color: var(--color-text);
-          margin-bottom: 0.5rem;
-          letter-spacing: -0.05em;
-        }
+          <div className="decorative-birds">
+            <span className="floating-bird b1">🦜</span>
+            <span className="floating-bird b2">🦅</span>
+            <span className="floating-bird b3">🦉</span>
+          </div>
+        </div>
+      ) : (
+        <div className="battle-arena">
+          <div className="header">
+            <h1>Bird Battle</h1>
+            <button className="exit-btn" onClick={() => setGameStarted(false)}>Exit</button>
+          </div>
 
-        .subtitle {
-          font-size: 1.25rem;
-          color: var(--color-text-light);
-          margin-bottom: 3rem;
-        }
+          <div className="battle-ground">
+            <div className="bird-column">
+              <BirdCard
+                bird={leftBird}
+                image={leftImage}
+                onVote={() => handleVote('left')}
+                loading={loading}
+                isBattleMode={true}
+                isActive={playingSide === 'left'}
+                onPlay={() => setPlayingSide('left')}
+              />
+            </div>
 
-        .key-input-container {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          background: white;
-          padding: 2rem;
-          border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-soft);
-        }
+            <div className="vs-badge">
+              <span>VS</span>
+            </div>
 
-        .key-instruction {
-          font-size: 0.9rem;
-          color: var(--color-text-light);
-        }
-
-        .input-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-
-        .input-icon {
-          position: absolute;
-          left: 12px;
-          color: #9ca3af;
-        }
-
-        .api-input {
-          width: 100%;
-          padding: 12px 12px 12px 40px;
-          border: 2px solid #e5e7eb;
-          border-radius: var(--radius-md);
-          font-size: 1rem;
-          outline: none;
-          transition: border-color 0.2s;
-        }
-
-        .api-input:focus {
-          border-color: var(--color-primary);
-        }
-
-        .key-help {
-          font-size: 0.8rem;
-          color: #9ca3af;
-        }
-
-        .key-help a {
-          color: var(--color-primary);
-          text-decoration: none;
-        }
-
-        .start-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .change-key-link {
-          background: none;
-          border: none;
-          color: #9ca3af;
-          font-size: 0.9rem;
-          text-decoration: underline;
-          cursor: pointer;
-        }
-
-        .loading-container {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 1rem;
-          color: var(--color-text-light);
-        }
-
-        .error-container {
-          text-align: center;
-          color: #ef4444;
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-          align-items: center;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.7; }
-        }
-      `}</style>
+            <div className="bird-column">
+              <BirdCard
+                bird={rightBird}
+                image={rightImage}
+                onVote={() => handleVote('right')}
+                loading={loading}
+                isBattleMode={true}
+                isActive={playingSide === 'right'}
+                onPlay={() => setPlayingSide('right')}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
