@@ -254,7 +254,8 @@ button {
 
 .battle-ground {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  /* Align to top so they don't stretch unnecessarily */
   justify-content: center;
   gap: 2rem;
   width: 100%;
@@ -262,10 +263,11 @@ button {
 }
 
 .bird-column {
-  flex: 1;
+  /* Fixed width to prevent horizontal shifting when text changes */
+  flex: 0 0 350px;
+  width: 350px;
   display: flex;
   justify-content: center;
-  min-width: 300px;
 }
 
 .vs-badge {

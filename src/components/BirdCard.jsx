@@ -89,24 +89,29 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           </div>
         </div>
 
-        {/* Sound Selectors */}
-        {bird.recordings && bird.recordings.length > 1 && (
-          <div className="sound-selector-container">
-            <span className="sound-label">Variations:</span>
-            <div className="sound-selectors">
-              {bird.recordings.map((_, index) => (
-                <button
-                  key={index}
-                  className={`sound-btn ${index === currentRecordingIndex ? 'active' : ''}`}
-                  onClick={() => setCurrentRecordingIndex(index)}
-                  aria-label={`Select sound ${index + 1}`}
-                >
-                  {index + 1}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Sound Selectors - Always render container to preserve space */}
+        <div className="sound-selector-container">
+          {bird.recordings && bird.recordings.length > 1 ? (
+            <>
+              <span className="sound-label">Variations:</span>
+              <div className="sound-selectors">
+                {bird.recordings.map((_, index) => (
+                  <button
+                    key={index}
+                    className={`sound-btn ${index === currentRecordingIndex ? 'active' : ''}`}
+                    onClick={() => setCurrentRecordingIndex(index)}
+                    aria-label={`Select sound ${index + 1}`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            /* Invisible spacer to keep height consistent */
+            <div style={{ height: '32px', visibility: 'hidden' }}></div>
+          )}
+        </div>
 
         <audio
           ref={audioRef}
@@ -137,8 +142,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           border-radius: 32px;
           padding: 2rem;
           width: 100%;
-          max-width: 400px;
-          min-height: 600px; /* Fixed min-height to prevent jumping */
+          /* Removed fixed min-height and height:100% to let content dictate size */
           box-shadow: 0 20px 40px rgba(0,0,0,0.1);
           border: 1px solid rgba(255, 255, 255, 0.8);
           display: flex;
@@ -151,7 +155,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
         }
 
         .battle-card {
-            min-height: 550px;
+            /* No extra styles needed */
         }
 
         .image-container {
@@ -196,7 +200,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           flex-direction: column;
           align-items: center;
           gap: 0.5rem;
-          flex: 1;
+          /* Removed flex: 1 to prevent stretching */
         }
 
         .bird-name {
@@ -204,7 +208,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           font-weight: 800;
           color: var(--color-text);
           line-height: 1.2;
-          min-height: 2.4em;
+          height: 2.4em; /* Fixed height for 2 lines */
           display: flex;
           align-items: center;
           justify-content: center;
@@ -212,6 +216,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
+          margin-bottom: 0.25rem;
         }
 
         .scientific-name {
@@ -219,6 +224,12 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           color: var(--color-text-light);
           opacity: 0.8;
           margin-bottom: 0.5rem;
+          height: 1.5em; /* Fixed height for 1 line */
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          width: 100%;
+          max-width: 300px;
         }
 
         .info-row {
@@ -274,6 +285,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           justify-content: center;
           box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);
           transition: all 0.2s ease;
+          flex-shrink: 0;
         }
 
         .play-button:hover {
@@ -319,8 +331,15 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           flex-direction: column;
           align-items: center;
           gap: 0.5rem;
-          margin-bottom: 1.5rem;
+          margin-bottom: 1rem; /* Reduced margin */
+          min-height: 60px; /* Reserve space even if empty/hidden to prevent jumping */
+          justify-content: center;
         }
+        
+        /* Hide container if empty but keep layout stable if we want strict alignment, 
+           but since it's conditional in JSX, we need to handle the case where it's NOT rendered.
+           Actually, better to ALWAYS render it but make it invisible if no variations.
+        */
 
         .sound-label {
           font-size: 0.8rem;
@@ -364,11 +383,12 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
         }
 
         .actions {
-          margin-top: auto; /* Push to bottom */
+          /* Removed margin-top: auto to reduce space */
+          margin-top: 1rem;
           width: 100%;
           display: flex;
           justify-content: center;
-          padding-top: 1rem;
+          padding-top: 0;
         }
         
         .vote-button {
