@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getRandomBird } from './services/xenoCanto';
 import { getBirdImage } from './services/imageService';
 import { submitVote } from './services/api';
@@ -9,7 +9,6 @@ import Loader from './components/Loader';
 import BattleTransition from './components/BattleTransition';
 import { Leaderboard } from './components/Leaderboard';
 import { Analytics } from '@vercel/analytics/react';
-import { Music, Sparkles, Key } from 'lucide-react';
 
 function App() {
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_XENO_CANTO_KEY || localStorage.getItem('xeno_canto_key') || '');
