@@ -8,11 +8,13 @@ import Button from './components/Button';
 import Loader from './components/Loader';
 import BattleTransition from './components/BattleTransition';
 import { Leaderboard } from './components/Leaderboard';
+import { Analytics } from '@vercel/analytics/react';
 import { Music, Sparkles, Key } from 'lucide-react';
 
 function App() {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('xeno_canto_key') || '');
-  const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem('xeno_canto_key'));
+  const [apiKey, setApiKey] = useState(import.meta.env.VITE_XENO_CANTO_KEY || localStorage.getItem('xeno_canto_key') || '');
+  // const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem('xeno_canto_key'));
+  const [showKeyInput, setShowKeyInput] = useState(false); // Default to false since we use env var
 
   // Battle State
   const [leftBird, setLeftBird] = useState(null);
@@ -32,6 +34,7 @@ function App() {
     setShowKeyInput(false);
   };
 
+  /*
   const clearKey = () => {
     setApiKey('');
     localStorage.removeItem('xeno_canto_key');
@@ -41,6 +44,7 @@ function App() {
     setRightBird(null);
     setPlayingSide(null);
   };
+  */
 
   const fetchBirdData = async (key) => {
     try {
@@ -73,7 +77,8 @@ function App() {
 
   const startBattle = async () => {
     if (!apiKey) {
-      setShowKeyInput(true);
+      // setShowKeyInput(true);
+      setError("API Key missing. Please configure VITE_XENO_CANTO_KEY.");
       return;
     }
 
@@ -100,7 +105,7 @@ function App() {
     } catch (err) {
       setError(err.message);
       if (err.message === 'API Key is required' || err.message.includes('key')) {
-        setShowKeyInput(true);
+        // setShowKeyInput(true);
       }
     } finally {
       setLoading(false);
@@ -168,6 +173,7 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* 
       {showKeyInput && (
         <div className="key-modal">
           <div className="modal-content">
@@ -184,6 +190,7 @@ function App() {
           </div>
         </div>
       )}
+      */}
 
       {view === 'home' && (
         <div className="welcome-screen">
@@ -209,11 +216,13 @@ function App() {
               </Button>
             </div>
 
+            {/*
             <div className="action-container">
               <button className="change-key-btn" onClick={() => setShowKeyInput(true)}>
                 {apiKey ? 'Change API Key' : 'Enter API Key'}
               </button>
             </div>
+            */}
           </div>
 
           <div className="decorative-birds">
@@ -277,8 +286,10 @@ function App() {
           <Leaderboard />
         </div>
       )}
+      <Analytics />
     </div>
   );
 }
 
 export default App;
+

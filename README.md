@@ -47,6 +47,7 @@ cd chirpy
 2.  Create a `.env` file in the root directory:
     ```env
     VITE_API_BASE_URL=http://localhost:3001
+    VITE_XENO_CANTO_KEY=your_xeno_canto_api_key
     ```
 3.  Start the frontend:
     ```bash
@@ -81,28 +82,20 @@ cd chirpy
 
 ---
 
-## ☁️ Deployment
+## ☁️ Deployment (Vercel & Render)
 
-### Backend (Render)
+### 1. Deploy Backend to Render
 
-1.  Create a **Web Service** on [Render](https://render.com/).
-2.  Connect your GitHub repository.
-3.  **Settings:**
-    -   **Root Directory:** `backend`
-    -   **Build Command:** `npm install`
-    -   **Start Command:** `node server.js`
-4.  **Environment Variables:**
-    -   `DATABASE_URL`: Your internal Render PostgreSQL connection string.
-    -   `NODE_ENV`: `production`
+Follow Render's documentation to deploy your Node.js Express backend and PostgreSQL database.
 
-### Frontend (Vercel)
+### 2. Deploy Frontend to Vercel
 
-1.  Import your project into [Vercel](https://vercel.com/).
-2.  **Settings:**
-    -   **Framework Preset:** Vite
-    -   **Root Directory:** `./` (default)
+1.  Connect your GitHub repository to Vercel.
+2.  Configure the build settings (Vite should be detected automatically).
 3.  **Environment Variables:**
     -   `VITE_API_BASE_URL`: The URL of your deployed Render backend (e.g., `https://chirpy-backend.onrender.com`).
+    -   `VITE_XENO_CANTO_KEY`: Your Xeno-Canto API key.
+4.  Deploy your project.
 
 ---
 

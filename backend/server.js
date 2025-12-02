@@ -3,15 +3,23 @@ const express = require("express");
 const cors = require("cors");
 const { pool, init, ensureBird } = require("./db");
 
+const morgan = require("morgan");
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
 
-// Request logging middleware
+// Comprehensive logging with Morgan
+// Logs: :method :url :status :response-time ms - :res[content-length]
+app.use(morgan('dev'));
+
+// Custom logging for detailed request body (useful for debugging votes)
 app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+    if (req.method === 'POST' || req.method === 'PUT') {
+        console.log(`📦 Body:`, JSON.stringify(req.body, null, 2));
+    }
     next();
 });
 
