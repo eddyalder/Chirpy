@@ -98,6 +98,14 @@ button {
   background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1.1;
+  /* Restore tighter line height */
+  padding: 0.2em 0.2em 0.4em 0.2em;
+  /* Add padding to top and bottom */
+  margin-bottom: -0.2em;
+  /* Compensate for padding */
+  display: inline-block;
+  background-size: cover;
+  /* Ensure gradient covers the padding */
 }
 
 .subtitle {

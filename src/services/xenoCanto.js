@@ -12,7 +12,8 @@ export async function getRandomBird(apiKey) {
     try {
         // Step 1: Initial broad query
         // We use 'q:A' (quality A) and 'len:10-60' (10 to 60 seconds) to get good, short clips.
-        const query = 'q:A len:10-60';
+        // Added 'grp:birds' to ensure we only get birds.
+        const query = 'q:A len:10-60 grp:birds';
         const initialResponse = await fetch(`${BASE_URL}?query=${encodeURIComponent(query)}&key=${apiKey}`);
 
         if (!initialResponse.ok) {
@@ -45,12 +46,55 @@ export async function getRandomBird(apiKey) {
 
         // Step 3: Pick random recording
         const randomRecording = pageData.recordings[Math.floor(Math.random() * pageData.recordings.length)];
+        const genus = randomRecording.gen;
+        const species = randomRecording.sp;
+
+        let recordings = [];
+
+        // Optimization: Check if we have enough recordings of this species in the current page
+        const sameSpeciesRecordings = pageData.recordings.filter(r => r.gen === genus && r.sp === species);
+
+        if (sameSpeciesRecordings.length >= 3) {
+            recordings = sameSpeciesRecordings.slice(0, 3).map(rec => ({
+                id: rec.id,
+                audio: rec.file,
+                location: rec.loc,
+                country: rec.cnt,
+                type: rec.type
+            }));
+        } else {
+            // Step 4: Fetch up to 3 recordings for this species
+            // We keep the quality/length constraints but search specifically for this bird
+            const speciesQuery = `gen:${genus} sp:${species} q:A len:10-60 grp:birds`;
+            const speciesResponse = await fetch(`${BASE_URL}?query=${encodeURIComponent(speciesQuery)}&key=${apiKey}`);
+
+            if (speciesResponse.ok) {
+                const speciesData = await speciesResponse.json();
+                recordings = speciesData.recordings.slice(0, 3).map(rec => ({
+                    id: rec.id,
+                    audio: rec.file,
+                    location: rec.loc,
+                    country: rec.cnt,
+                    type: rec.type
+                }));
+            } else {
+                // Fallback to just the one we found
+                recordings = [{
+                    id: randomRecording.id,
+                    audio: randomRecording.file,
+                    location: randomRecording.loc,
+                    country: randomRecording.cnt,
+                    type: randomRecording.type
+                }];
+            }
+        }
 
         return {
             id: randomRecording.id,
             name: randomRecording.en, // English name
-            sciName: randomRecording.gen + ' ' + randomRecording.sp, // Scientific name
-            audio: randomRecording.file,
+            sciName: genus + ' ' + species, // Scientific name
+            audio: randomRecording.file, // Main audio (fallback)
+            recordings: recordings, // Array of recordings
             recordist: randomRecording.rec,
             location: randomRecording.loc,
             country: randomRecording.cnt,

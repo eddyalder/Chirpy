@@ -199,7 +199,7 @@ function App() {
       ) : (
         <div className="battle-arena">
           <div className="header">
-            <h1>Bird Battle</h1>
+            <h1>Chirpy</h1>
             <button className="exit-btn" onClick={() => setGameStarted(false)}>Exit</button>
           </div>
 

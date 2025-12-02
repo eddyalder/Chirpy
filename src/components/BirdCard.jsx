@@ -91,15 +91,20 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
 
         {/* Sound Selectors */}
         {bird.recordings && bird.recordings.length > 1 && (
-          <div className="sound-selectors">
-            {bird.recordings.map((_, index) => (
-              <button
-                key={index}
-                className={`sound-dot ${index === currentRecordingIndex ? 'active' : ''}`}
-                onClick={() => setCurrentRecordingIndex(index)}
-                aria-label={`Select sound ${index + 1}`}
-              />
-            ))}
+          <div className="sound-selector-container">
+            <span className="sound-label">Variations:</span>
+            <div className="sound-selectors">
+              {bird.recordings.map((_, index) => (
+                <button
+                  key={index}
+                  className={`sound-btn ${index === currentRecordingIndex ? 'active' : ''}`}
+                  onClick={() => setCurrentRecordingIndex(index)}
+                  aria-label={`Select sound ${index + 1}`}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -133,7 +138,7 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           padding: 2rem;
           width: 100%;
           max-width: 400px;
-          min-height: 580px;
+          min-height: 600px; /* Fixed min-height to prevent jumping */
           box-shadow: 0 20px 40px rgba(0,0,0,0.1);
           border: 1px solid rgba(255, 255, 255, 0.8);
           display: flex;
@@ -142,11 +147,11 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           text-align: center;
           position: relative;
           overflow: visible;
-          margin-top: 60px; /* Space for the bird popping out */
+          margin-top: 60px;
         }
 
         .battle-card {
-            min-height: 500px; /* Slightly smaller for battle mode if needed */
+            min-height: 550px;
         }
 
         .image-container {
@@ -199,6 +204,10 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           display: flex;
           align-items: center;
           justify-content: center;
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
         }
 
         .scientific-name {
@@ -216,12 +225,25 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           font-size: 0.9rem;
           margin-bottom: 1.5rem;
           text-align: left;
-          max-width: 100%;
-          min-height: 2.7em;
+          width: 100%;
+          /* Strictly enforce height for 2 lines of text */
+          line-height: 1.5;
+          height: 3em; /* 1.5 * 2 lines = 3em */
+          overflow: hidden;
+          flex-shrink: 0; /* Prevent shrinking */
+        }
+
+        .info-row span {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
         }
 
         .icon {
-          margin-top: 4px;
+          margin-top: 0.25em; /* Align with first line of text */
           flex-shrink: 0;
         }
 
@@ -288,29 +310,57 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
           to { transform: rotate(360deg); }
         }
 
+        .sound-selector-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .sound-label {
+          font-size: 0.8rem;
+          color: var(--color-text-light);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-weight: 700;
+        }
+
         .sound-selectors {
             display: flex;
             gap: 8px;
-            margin-bottom: 1.5rem;
         }
 
-        .sound-dot {
-            width: 12px;
-            height: 12px;
+        .sound-btn {
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: var(--color-secondary);
-            border: none;
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid transparent;
+            color: var(--color-text-light);
+            font-weight: 700;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .sound-dot.active {
+        .sound-btn:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translateY(-2px);
+        }
+
+        .sound-btn.active {
             background: var(--color-primary);
-            transform: scale(1.2);
+            color: white;
+            box-shadow: 0 4px 10px rgba(74, 222, 128, 0.3);
+            transform: scale(1.1);
         }
 
         .actions {
-          margin-top: 2rem;
+          margin-top: auto; /* Push to bottom */
           width: 100%;
           display: flex;
           justify-content: center;
