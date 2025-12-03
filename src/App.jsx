@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getRandomBird } from './services/xenoCanto';
 import { getBirdImage } from './services/imageService';
 import { submitVote, pingServer } from './services/api';
@@ -16,7 +16,7 @@ function App() {
   const [showKeyInput, setShowKeyInput] = useState(false); // Default to false since we use env var
 
   // Wake up the server on load
-  React.useEffect(() => {
+  useEffect(() => {
     pingServer();
   }, []);
 
