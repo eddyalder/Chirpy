@@ -126,8 +126,8 @@ function App() {
 
     // Submit vote to backend
     if (winner && loser) {
-      // Use scientific name as slug for uniqueness
-      await submitVote(winner.sciName, loser.sciName);
+      // Use scientific name as slug for uniqueness, pass common name for display
+      await submitVote(winner.sciName, loser.sciName, winner.name, loser.name);
     }
 
     startBattle(); // Load next round

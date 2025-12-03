@@ -143,7 +143,7 @@ export function Leaderboard() {
                     #{index + 1}
                   </span>
                 </td>
-                <td className="bird-name-cell">{row.slug}</td>
+                <td className="bird-name-cell">{row.common_name || row.slug}</td>
                 <td className="stat-cell win">{row.wins}</td>
                 <td className="stat-cell loss">{row.losses}</td>
               </tr>

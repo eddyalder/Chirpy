@@ -5,12 +5,14 @@ import Button from './Button';
 const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isActive, onPlay }) => {
   const [currentRecordingIndex, setCurrentRecordingIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const audioRef = useRef(null);
 
   // Reset state when bird changes
   useEffect(() => {
     setCurrentRecordingIndex(0);
     setIsPlaying(false);
+    setImgError(false);
   }, [bird]);
 
   // Handle audio source change
@@ -59,8 +61,13 @@ const BirdCard = ({ bird, image, onRandomize, onVote, loading, isBattleMode, isA
   return (
     <div className={`bird-card ${isBattleMode ? 'battle-card' : ''}`}>
       <div className="image-container">
-        {image ? (
-          <img src={image} alt={bird.name} className="bird-image" />
+        {image && !imgError ? (
+          <img
+            src={image}
+            alt={bird.name}
+            className="bird-image"
+            onError={() => setImgError(true)}
+          />
         ) : (
           <div className="placeholder-image">
             <img src="/favicon.svg" alt="Default Bird" className="default-bird-icon" />

@@ -28,14 +28,19 @@ app.get("/api/health", (req, res) => res.send("OK"));
 
 // Vote submission
 app.post("/api/vote", async (req, res) => {
-    const { winnerSlug, loserSlug } = req.body;
+    const { winnerSlug, loserSlug, winnerName, loserName } = req.body;
+    console.log("Vote received:", { winnerSlug, loserSlug, winnerName, loserName });
+
     if (!winnerSlug || !loserSlug) {
         return res.status(400).json({ error: "winnerSlug and loserSlug required" });
     }
 
     try {
         await init();
-        await Promise.all([ensureBird(winnerSlug), ensureBird(loserSlug)]);
+        await Promise.all([
+            ensureBird(winnerSlug, winnerName),
+            ensureBird(loserSlug, loserName)
+        ]);
 
         await pool.query("BEGIN");
         await pool.query("UPDATE birds SET wins = wins + 1 WHERE slug = $1", [winnerSlug]);
@@ -59,13 +64,14 @@ app.get("/api/leaderboard", async (req, res) => {
     const limit = Number(req.query.limit) || 50;
     try {
         const result = await pool.query(
-            `SELECT id, slug, wins, losses, (wins + losses) AS total_matches
+            `SELECT id, slug, common_name, wins, losses, (wins + losses) AS total_matches
        FROM birds
        WHERE wins + losses > 0
        ORDER BY wins DESC, total_matches DESC
        LIMIT $1`,
             [limit]
         );
+        console.log("Leaderboard sample:", result.rows.slice(0, 3));
         res.json(result.rows);
     } catch (err) {
         console.error(err);
