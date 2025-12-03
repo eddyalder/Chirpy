@@ -23,3 +23,11 @@ export async function getLeaderboard(limit = 50) {
         return [];
     }
 }
+
+export async function pingServer() {
+    try {
+        await fetch(`${API_BASE}/api/health`);
+    } catch (error) {
+        // Silent fail
+    }
+}
