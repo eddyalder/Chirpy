@@ -23,6 +23,9 @@ app.use((req, res, next) => {
     next();
 });
 
+// Health check for Render wake-up
+app.get("/api/health", (req, res) => res.send("OK"));
+
 // Vote submission
 app.post("/api/vote", async (req, res) => {
     const { winnerSlug, loserSlug } = req.body;

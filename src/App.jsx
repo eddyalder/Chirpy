@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { getRandomBird } from './services/xenoCanto';
 import { getBirdImage } from './services/imageService';
-import { submitVote } from './services/api';
+import { submitVote, pingServer } from './services/api';
 import BirdCard from './components/BirdCard';
 import Button from './components/Button';
 import Loader from './components/Loader';
@@ -14,6 +14,11 @@ function App() {
   const [apiKey, setApiKey] = useState(import.meta.env.VITE_XENO_CANTO_KEY || localStorage.getItem('xeno_canto_key') || '');
   // const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem('xeno_canto_key'));
   const [showKeyInput, setShowKeyInput] = useState(false); // Default to false since we use env var
+
+  // Wake up the server on load
+  React.useEffect(() => {
+    pingServer();
+  }, []);
 
   // Battle State
   const [leftBird, setLeftBird] = useState(null);
